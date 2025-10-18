@@ -2,6 +2,7 @@ package com.example.demo.controllers;
 
 import com.example.demo.models.Calendar;
 import com.example.demo.models.Day;
+import com.example.demo.models.PrevNext;
 import com.example.demo.services.CalendarService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,14 +25,9 @@ public class CalendarController {
         return service.getAll();
     }
 
-    @GetMapping("/year/{year}")
-    public List<Calendar> getAllByYear(@PathVariable Integer year) {
-        return service.getAllByYear(year);
-    }
-
-    @GetMapping("/month/{month}")
-    public List<Calendar> getAllByMonth(@PathVariable Integer month) {
-        return service.getAllByMonth(month);
+    @PostMapping
+    public Calendar create(@RequestBody Calendar calendar) {
+        return service.create(calendar);
     }
 
     @GetMapping("/day-detail/{dayId}")
@@ -39,18 +35,6 @@ public class CalendarController {
         return service.getDay(dayId)
                 .<ResponseEntity<?>>map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<Calendar> getByYear(@PathVariable String id) {
-        return service.getById(id)
-                .<ResponseEntity<Calendar>>map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    @PostMapping
-    public Calendar create(@RequestBody Calendar calendar) {
-        return service.create(calendar);
     }
 
     @PutMapping("/update-day/{year}/{month}/{dayId}")
@@ -73,4 +57,29 @@ public class CalendarController {
     ) {
         return ResponseEntity.ok(service.addDay(year, month, newDay));
     }
+
+    @GetMapping("/prev-next")
+    public ResponseEntity<PrevNext> getCurrPrevNext(@RequestParam int year, @RequestParam int month) {
+        return ResponseEntity.ok(service.getCurrPrevNext(year, month));
+    }
+
+    @GetMapping("/year/{year}")
+    public List<Calendar> getAllByYear(@PathVariable Integer year) {
+        return service.getAllByYear(year);
+    }
+
+    @GetMapping("/month/{month}")
+    public List<Calendar> getAllByMonth(@PathVariable Integer month) {
+        return service.getAllByMonth(month);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Calendar> getByYear(@PathVariable String id) {
+        return service.getById(id)
+                .<ResponseEntity<Calendar>>map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+
+
 }
