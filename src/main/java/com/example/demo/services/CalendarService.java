@@ -58,9 +58,9 @@ public class CalendarService {
         List<Calendar> results = repository.findByYearInAndMonthIn(new ArrayList<>(years), new ArrayList<>(months));
 
         // Group results by exact match
-        Map<String, List<Calendar>> grouped = new HashMap<>();
+        Map<String, Calendar> grouped = new HashMap<>();
         for (String key : List.of("previous", "current", "next")) {
-            grouped.put(key, new ArrayList<>());
+            grouped.put(key, new Calendar());
         }
 
         for (Calendar c : results) {
@@ -73,7 +73,11 @@ public class CalendarService {
                         case 2 -> "next";
                         default -> "unknown";
                     };
-                    grouped.get(key).add(c);
+                   grouped.put(key, Calendar.builder()
+                           ._id(c.get_id())
+                           .year(c.getYear())
+                           .month(c.getMonth())
+                           .days(c.getDays()).build());
                     break;
                 }
             }

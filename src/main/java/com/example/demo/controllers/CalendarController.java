@@ -67,8 +67,7 @@ public class CalendarController {
             @RequestParam int month
     ) {
         try {
-            PrevNextDto dto = service.getCurrPrevNext(year, month);
-            return ResponseEntity.ok(dto);
+            return ResponseEntity.ok(service.getCurrPrevNext(year, month));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
