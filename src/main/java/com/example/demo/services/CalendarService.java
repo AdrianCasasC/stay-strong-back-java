@@ -1,5 +1,6 @@
 package com.example.demo.services;
 
+import com.example.demo.dtos.CorporalWeight;
 import com.example.demo.dtos.MonthYear;
 import com.example.demo.dtos.PrevNextDto;
 import com.example.demo.models.Calendar;
@@ -79,6 +80,16 @@ public class CalendarService {
         }
 
         return new PrevNextDto(grouped);
+    }
+
+    public List<CorporalWeight> getCorporalWeight() {
+        List<Calendar> calendars = repository.findAll();
+
+        return calendars.stream()
+                .flatMap(c -> c.getDays().stream())
+                .filter(day -> day.getWeightNumber() != null)
+                .map(day -> new CorporalWeight(day.getDate(), day.getWeightNumber()))
+                .collect(Collectors.toList());
     }
 
     private static List<MonthYear> getMonthYears(int year, int month) {

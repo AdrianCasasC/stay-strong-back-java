@@ -1,5 +1,6 @@
 package com.example.demo.controllers;
 
+import com.example.demo.dtos.CorporalWeight;
 import com.example.demo.dtos.PrevNextDto;
 import com.example.demo.models.Calendar;
 import com.example.demo.models.Day;
@@ -70,6 +71,16 @@ public class CalendarController {
             return ResponseEntity.ok(dto);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", "Unexpected error occurred"));
+        }
+    }
+
+    @GetMapping("/corporal-weight")
+    public ResponseEntity<?> getCorporalWeight() {
+        try {
+            List<CorporalWeight> corporalWeights = service.getCorporalWeight();
+            return ResponseEntity.ok(corporalWeights);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of("error", "Unexpected error occurred"));
         }
