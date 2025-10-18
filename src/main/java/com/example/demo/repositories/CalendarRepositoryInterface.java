@@ -14,4 +14,5 @@ public interface CalendarRepositoryInterface extends MongoRepository<Calendar, S
     List<Calendar> findByYear(Integer year);
     Optional<Calendar> findByDaysId(String dayId);
     List<Calendar> findByMonth(Integer month);
+    List<Calendar> findByYearInAndMonthIn(List<Integer> years, List<Integer> months);
 }

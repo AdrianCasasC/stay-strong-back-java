@@ -1,5 +1,6 @@
 package com.example.demo.controllers;
 
+import com.example.demo.dtos.PrevNextDto;
 import com.example.demo.models.Calendar;
 import com.example.demo.models.Day;
 import com.example.demo.models.PrevNext;
@@ -8,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/calendar")
@@ -59,8 +61,18 @@ public class CalendarController {
     }
 
     @GetMapping("/prev-next")
-    public ResponseEntity<PrevNext> getCurrPrevNext(@RequestParam int year, @RequestParam int month) {
-        return ResponseEntity.ok(service.getCurrPrevNext(year, month));
+    public ResponseEntity<?> getCalendarWindow(
+            @RequestParam int year,
+            @RequestParam int month
+    ) {
+        try {
+            PrevNextDto dto = service.getCurrPrevNext(year, month);
+            return ResponseEntity.ok(dto);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", "Unexpected error occurred"));
+        }
     }
 
     @GetMapping("/year/{year}")

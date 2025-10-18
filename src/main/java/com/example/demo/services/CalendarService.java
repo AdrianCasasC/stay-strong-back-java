@@ -1,5 +1,7 @@
 package com.example.demo.services;
 
+import com.example.demo.dtos.MonthYear;
+import com.example.demo.dtos.PrevNextDto;
 import com.example.demo.models.Calendar;
 import com.example.demo.models.Day;
 import com.example.demo.models.PrevNext;
@@ -11,7 +13,9 @@ import org.bson.Document;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.time.YearMonth;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -43,52 +47,55 @@ public class CalendarService {
         return repository.findByYear(year);
     }
 
-    public PrevNext getCurrPrevNext(int y, int m) {
-        record MonthTarget(int year, int month) {}
-        List<MonthTarget> monthTargets = List.of(
-                m == 1 ? new MonthTarget(y - 1, 12) : new MonthTarget(y, m - 1),
-                new MonthTarget(y, m),
-                m == 12 ? new MonthTarget(y + 1, 1) : new MonthTarget(y, m + 1)
-        );
+    public PrevNextDto getCurrPrevNext(int year, int month) {
+        List<MonthYear> targets = getMonthYears(year, month);
 
-        try (var mongoClient = MongoClients.create(mongoUri)) {
-            MongoDatabase db = mongoClient.getDatabase(mongoDbName);
-            MongoCollection<Document> collection = db.getCollection("calendars");
+        // Query MongoDB
+        Set<Integer> years = targets.stream().map(MonthYear::year).collect(Collectors.toSet());
+        Set<Integer> months = targets.stream().map(MonthYear::month).collect(Collectors.toSet());
 
-            // Build $or query
-            var orQuery = monthTargets.stream()
-                    .map(mt -> new Document("year", mt.year()).append("month", mt.month()))
-                    .toList();
+        List<Calendar> results = repository.findByYearInAndMonthIn(new ArrayList<>(years), new ArrayList<>(months));
 
-            var query = new Document("$or", orQuery);
-
-            // Execute query
-            List<Document> calendars = collection.find(query).into(new java.util.ArrayList<>());
-
-
-            Document previous = calendars.stream()
-                    .filter(cal -> cal.getInteger("year") == monthTargets.getFirst().year()
-                            && cal.getInteger("month") == monthTargets.getFirst().month())
-                    .findFirst()
-                    .orElse(null);
-
-            Document current = calendars.stream()
-                    .filter(cal -> cal.getInteger("year") == monthTargets.get(1).year()
-                            && cal.getInteger("month") == monthTargets.get(1).month())
-                    .findFirst()
-                    .orElse(null);
-
-            Document next = calendars.stream()
-                    .filter(cal -> cal.getInteger("year") == monthTargets.getLast().year()
-                            && cal.getInteger("month") == monthTargets.getLast().month())
-                    .findFirst()
-                    .orElse(null);
-
-            return new PrevNext(previous, current, next);
-
-        } catch (Exception e) {
-            throw new RuntimeException("Error getting current, previous, and next months");
+        // Group results by exact match
+        Map<String, List<Calendar>> grouped = new HashMap<>();
+        for (String key : List.of("previous", "current", "next")) {
+            grouped.put(key, new ArrayList<>());
         }
+
+        for (Calendar c : results) {
+            for (int i = 0; i < targets.size(); i++) {
+                MonthYear my = targets.get(i);
+                if (c.getYear() == my.year() && c.getMonth() == my.month()) {
+                    String key = switch (i) {
+                        case 0 -> "previous";
+                        case 1 -> "current";
+                        case 2 -> "next";
+                        default -> "unknown";
+                    };
+                    grouped.get(key).add(c);
+                    break;
+                }
+            }
+        }
+
+        return new PrevNextDto(grouped);
+    }
+
+    private static List<MonthYear> getMonthYears(int year, int month) {
+        if (month < 1 || month > 12) {
+            throw new IllegalArgumentException("Month must be between 1 and 12");
+        }
+
+        // Compute prev/current/next
+        YearMonth current = YearMonth.of(year, month);
+        YearMonth previous = current.minusMonths(1);
+        YearMonth next = current.plusMonths(1);
+
+        return List.of(
+                new MonthYear(previous.getYear(), previous.getMonthValue()),
+                new MonthYear(current.getYear(), current.getMonthValue()),
+                new MonthYear(next.getYear(), next.getMonthValue())
+        );
     }
 
     public List<Calendar> getAllByMonth(Integer month) {

@@ -15,6 +15,6 @@ public class Calendar {
     private String _id;
     private int year;
     private int month;
-    private List<Day> days = new ArrayList<>();;
+    private List<Day> days = new ArrayList<>();
 }
 
